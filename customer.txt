@@ -1,0 +1,66 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract customerData {
+    struct Customer {
+        uint customer_id;
+        string name;
+        uint age;
+        string email;
+        uint balance;
+    }
+
+    Customer[] private customers;
+    address public owner;
+
+    event CustomerAdded(uint customer_id, string name, uint age, string email, uint balance);
+    event ReceivedEther(address indexed sender, uint value);
+
+    // Modifier to restrict access to only the owner
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only the owner can add customers");
+        _;
+    }
+
+    // Fallback function to handle incoming ether transfers
+    fallback() external payable {
+        emit ReceivedEther(msg.sender, msg.value);
+    }
+
+    // Constructor to set the contract owner
+    constructor() {
+        owner = msg.sender;
+    }
+
+    // Function to add a new customer, restricted to the owner
+    function addCustomer(uint customer_id, string memory name, uint age, string memory email, uint balance) public onlyOwner {
+        customers.push(Customer(customer_id, name, age, email, balance));
+        emit CustomerAdded(customer_id, name, age, email, balance);
+    }
+
+    // Function to get a customer's details by customer_id
+    function getCustomer(uint customer_id) public view returns (uint, string memory, uint, string memory, uint) {
+        for (uint i = 0; i < customers.length; i++) {
+            if (customers[i].customer_id == customer_id) {
+                return (
+                    customers[i].customer_id,
+                    customers[i].name,
+                    customers[i].age,
+                    customers[i].email,
+                    customers[i].balance
+                );
+            }
+        }
+        revert("Not found");
+    }
+
+    // Function to get the total number of customers
+    function getCustomerCount() public view returns (uint) {
+        return customers.length;
+    }
+
+    // Function to receive ether
+    receive() external payable {
+        emit ReceivedEther(msg.sender, msg.value);
+    }
+}

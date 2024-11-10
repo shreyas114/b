@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract employeeData{
+    struct Employee{
+        uint emp_id;
+        string name;
+        uint age;
+        string email;
+        uint salary;
+    }
+
+    Employee[] private employees;
+    address public owner;
+
+    event EmployeeAdded(uint emp_id,string name,uint age,string email,uint salary);
+    event ReceivedEther(address indexed sender,uint value);
+
+    modifier onlyOwner()
+    {
+        require(msg.sender==owner,"Sorry you are not the owner");
+        _;
+    }
+    fallback() external payable {
+        emit ReceivedEther(msg.sender, msg.value);
+     }
+
+    constructor()
+    {
+        owner = msg.sender;
+    }
+
+    function addEmployee(uint emp_id,string memory name,uint age,string memory email,uint salary)public onlyOwner{
+        employees.push(Employee(emp_id,name,age,email,salary));
+        emit EmployeeAdded(emp_id, name, age, email, salary);
+    }
+
+    function getEmployee(uint emp_id)public view onlyOwner returns (uint ,string memory ,uint ,string memory ,uint )
+    {
+        for(uint i = 0;i<employees.length;i++)
+        {
+            if(employees[i].emp_id==emp_id)
+            {
+                return (employees[i].emp_id,employees[i].name,employees[i].age,employees[i].email,employees[i].salary);
+            }
+        }
+        revert("Not found");
+    }
+
+    function getEmployeeCount() public view returns (uint)
+    {
+        return employees.length;
+    }
+    receive() external payable { 
+        emit ReceivedEther(msg.sender, msg.value);
+    }
+}

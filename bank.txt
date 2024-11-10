@@ -1,0 +1,42 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Bank {
+    address public accHolder;
+    uint256 private balance = 0;
+
+    // Modifier to restrict functions to the account holder
+    modifier onlyAccHolder() {
+        require(msg.sender == accHolder, "You are not the account holder");
+        _;
+    }
+
+    // Events for logging deposit and withdrawal activities
+    event Deposit(address indexed accHolder, uint256 amount);
+    event Withdrawal(address indexed accHolder, uint256 amount);
+
+    // Constructor to initialize the account holder
+    constructor() {
+        accHolder = msg.sender;
+    }
+
+    // Function to deposit Ether into the bank account
+    function deposit() public payable onlyAccHolder {
+        require(msg.value > 0, "Amount should be greater than 0");
+        balance += msg.value;
+        emit Deposit(msg.sender, msg.value);
+    }
+
+    // Function to withdraw a specified amount from the bank account
+    function withdraw(uint256 amount) public onlyAccHolder {
+        require(balance >= amount, "Insufficient balance");
+        balance -= amount;
+        payable(msg.sender).transfer(amount);
+        emit Withdrawal(msg.sender, amount);
+    }
+
+    // Function to show the current balance
+    function show() public view onlyAccHolder returns (uint256) {
+        return balance;
+    }
+}

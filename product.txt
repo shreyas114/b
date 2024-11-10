@@ -1,0 +1,72 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract ProductInventory {
+    struct Product {
+        uint product_id;
+        string name;
+        uint quantity;
+        uint price;
+    }
+
+    Product[] private products;
+    address public owner;
+
+    event ProductReceived(uint product_id, string name, uint quantity, uint price);
+    event ProductSold(uint product_id, string name, uint quantity, uint totalCost);
+    event ReceivedEther(address indexed sender, uint value);
+
+    // Modifier to restrict access to only the owner
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only the owner can perform this operation");
+        _;
+    }
+
+    // Fallback function to handle incoming ether transfers
+    fallback() external payable {
+        emit ReceivedEther(msg.sender, msg.value);
+    }
+
+    // Constructor to set the contract owner
+    constructor() {
+        owner = msg.sender;
+    }
+
+    // Function to receive a new product or restock an existing product
+    function receiveProduct(uint product_id, string memory name, uint quantity, uint price) public onlyOwner {
+        for (uint i = 0; i < products.length; i++) {
+            if (products[i].product_id == product_id) {
+                products[i].quantity += quantity; // Restock the product
+                emit ProductReceived(product_id, name, quantity, price);
+                return;
+            }
+        }
+        // If the product is new, add it to the inventory
+        products.push(Product(product_id, name, quantity, price));
+        emit ProductReceived(product_id, name, quantity, price);
+    }
+
+    // Function to sell a product
+    function sellProduct(uint product_id, uint quantity) public onlyOwner {
+        for (uint i = 0; i < products.length; i++) {
+            if (products[i].product_id == product_id) {
+                require(products[i].quantity >= quantity, "Insufficient stock");
+                uint totalCost = products[i].price * quantity;
+                products[i].quantity -= quantity; // Deduct the quantity from stock
+                emit ProductSold(product_id, products[i].name, quantity, totalCost);
+                return;
+            }
+        }
+        revert("Product not found");
+    }
+
+    // Function to display stock details of all products
+    function displayStock() public view returns (Product[] memory) {
+        return products;
+    }
+
+    // Function to receive ether
+    receive() external payable {
+        emit ReceivedEther(msg.sender, msg.value);
+    }
+}
